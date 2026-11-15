@@ -29,7 +29,7 @@ simple-emailer --version
 Expected version output:
 
 ```text
-simple-emailer 0.2.0
+simple-emailer 0.2.1
 ```
 
 On macOS with Homebrew:
