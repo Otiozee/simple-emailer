@@ -4,31 +4,80 @@ Simple Emailer is a local CLI and optional web interface for sending plain-text 
 
 Email cannot be delivered through Gmail, Yahoo, Outlook, or another reputable provider without that provider authenticating the sender. Simple Emailer has no separate application login, but the SMTP provider still requires an app password or OAuth. The CLI securely prompts for an app password, or reads it from an environment variable so automated commands need no interactive login.
 
-## Install Globally
+- [PyPI package](https://pypi.org/project/simple-emailer/)
+- [GitHub repository](https://github.com/otiozee/simple-emailer)
 
-[`pipx`](https://pipx.pypa.io/) is recommended because it installs an isolated application and exposes `simple-emailer` globally:
+## Install
+
+[`pipx`](https://pipx.pypa.io/) installs the application in an isolated environment and makes `simple-emailer` available from any directory for the current user.
+
+On Debian, Ubuntu, or WSL, install `pipx` first:
 
 ```bash
-pipx install .
+sudo apt update
+sudo apt install pipx
+pipx ensurepath
+```
+
+Restart the terminal, then install Simple Emailer from PyPI:
+
+```bash
+pipx install simple-emailer
 simple-emailer --version
 ```
 
-For development from this checkout:
+Expected version output:
 
-```bash
-python3 -m pip install -e .
+```text
+simple-emailer 0.2.0
 ```
 
-## Send From The CLI
-
-Set the provider-generated app password without placing it in shell history:
+On macOS with Homebrew:
 
 ```bash
-read -rsp "App password: " EMAILER_PASSWORD && export EMAILER_PASSWORD
-printf '\n'
+brew install pipx
+pipx ensurepath
+pipx install simple-emailer
 ```
 
-Send a message:
+On Windows PowerShell:
+
+```powershell
+py -m pip install --user pipx
+py -m pipx ensurepath
+```
+
+Restart PowerShell, then run:
+
+```powershell
+pipx install simple-emailer
+simple-emailer --version
+```
+
+The latest GitHub source can be installed instead of the PyPI release:
+
+```bash
+pipx install "git+https://github.com/otiozee/simple-emailer.git"
+```
+
+Do not use `sudo pip`, `pip --break-system-packages`, or modify the operating system's Python installation.
+
+Upgrade or remove the application with:
+
+```bash
+pipx upgrade simple-emailer
+pipx uninstall simple-emailer
+```
+
+## Quick Start
+
+List available providers:
+
+```bash
+simple-emailer providers
+```
+
+Send through Gmail:
 
 ```bash
 simple-emailer send \
@@ -39,7 +88,54 @@ simple-emailer send \
   --body "Sent from my terminal"
 ```
 
-If `EMAILER_PASSWORD` is not set, the command prompts without displaying the password. The credential is never accepted as a command-line argument, where it could leak through shell history or the process list.
+The command securely prompts for the provider-generated app password. Typed password characters are intentionally not displayed. Replace the example addresses with real addresses.
+
+Gmail requires 2-Step Verification and a [Google app password](https://support.google.com/accounts/answer/185833). Yahoo requires a [third-party app password](https://help.yahoo.com/kb/generate-manage-third-party-passwords-sln15241.html). Normal account passwords usually will not work.
+
+Run a validation and preview without a credential, SMTP connection, or delivery:
+
+```bash
+simple-emailer send \
+  --provider gmail \
+  --from you@gmail.com \
+  --to recipient@example.com \
+  --subject "Preview" \
+  --body "Nothing will be sent" \
+  --dry-run
+```
+
+## Write Messages
+
+Use Bash's `$'...'` quoting for multiple lines. `\n` adds one newline and `\n\n` adds a blank line:
+
+```bash
+simple-emailer send \
+  --provider gmail \
+  --from you@gmail.com \
+  --to recipient@example.com \
+  --subject "Hello" \
+  --body $'Hello,\n\nThis is the first paragraph.\nThis is another line.\n\nRegards,\nYour Name'
+```
+
+In Windows PowerShell, put a multiline message in a variable:
+
+```powershell
+$body = @"
+Hello,
+
+This is the first paragraph.
+
+Regards,
+Your Name
+"@
+
+simple-emailer send `
+  --provider gmail `
+  --from you@gmail.com `
+  --to recipient@example.com `
+  --subject "Hello" `
+  --body $body
+```
 
 Use a file or standard input for longer messages, and repeat recipient or attachment options:
 
@@ -61,30 +157,53 @@ printf 'Message from a pipeline\n' | simple-emailer send \
   --subject "Piped message"
 ```
 
-Run a complete validation and preview without a credential or network connection:
+Available message options include:
+
+- `--to`, `--cc`, `--bcc`: repeat these options for multiple recipients.
+- `--reply-to`: set a different reply address.
+- `--body`, `--body-file`: provide plain-text content directly, from a file, or from standard input.
+- `--attach`: repeat this option to attach up to 5 files and 12 MB total.
+- `--name`: set the sender's display name.
+- `--dry-run`: validate and preview without sending.
+
+Run `simple-emailer send --help` for every option.
+
+## Credentials
+
+For interactive use, leave `EMAILER_PASSWORD` unset. The CLI will ask for the app password and hold it only for the current send operation.
+
+For automation, read the app password into the environment without adding it to shell history:
+
+```bash
+read -rsp "App password: " EMAILER_PASSWORD
+export EMAILER_PASSWORD
+printf '\n'
+```
+
+Send the message, then remove the variable:
 
 ```bash
 simple-emailer send \
   --provider gmail \
   --from you@gmail.com \
   --to recipient@example.com \
-  --subject "Preview" \
-  --body "Nothing will be sent" \
-  --dry-run
+  --subject "Automated message" \
+  --body "Hello"
+
+unset EMAILER_PASSWORD
 ```
 
-Example output:
+The credential is deliberately not accepted as a command-line argument because arguments can leak through shell history and process listings.
+
+## Delivery Result
+
+A successful SMTP submission prints:
 
 ```text
-Dry run: no network connection was made.
-Provider: Gmail (smtp.gmail.com:465, tls)
-Envelope from: you@gmail.com
-Envelope recipients: recipient@example.com
-From: you@gmail.com
-To: recipient@example.com
-Subject: Preview
-Body: 20 characters
+Provider accepted 1 recipient(s).
 ```
+
+This means the provider accepted the message for delivery. It does not guarantee that the destination server will place it in the recipient's inbox.
 
 ## Provider Support
 
@@ -114,6 +233,10 @@ simple-emailer send \
   --body "Hello"
 ```
 
+Use `--smtp-security tls` with the provider's implicit TLS port, commonly `465`. Use `--smtp-security starttls` with its STARTTLS port, commonly `587`. Omit `--username` when the SMTP username is the same as the `--from` address.
+
+Custom SMTP supports password or app-password authentication. It does not add OAuth support and therefore cannot bypass Outlook's OAuth requirement.
+
 ## Local Web Interface
 
 The original local-first PWA remains available:
@@ -131,6 +254,12 @@ Tests never contact a real SMTP server:
 ```bash
 python3 -m unittest discover -s tests -v
 python3 -m compileall -q emailer tests msg.py
+```
+
+For development from a source checkout, install an editable copy into pipx:
+
+```bash
+pipx install --editable .
 ```
 
 ## Security Model
