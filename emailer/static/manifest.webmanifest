@@ -1,0 +1,19 @@
+{
+  "name": "Simple Emailer",
+  "short_name": "Emailer",
+  "description": "Send a one-off message through your own email provider.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4f0e7",
+  "theme_color": "#17352f",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

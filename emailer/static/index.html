@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#17352f">
+  <meta name="description" content="Send a one-off email through your own provider without saving credentials.">
+  <title>Simple Emailer</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#compose">Skip to message form</a>
+  <div class="app-shell">
+    <aside class="rail" aria-label="Application information">
+      <div>
+        <a class="brand" href="/" aria-label="Simple Emailer home">
+          <span class="brand-mark" aria-hidden="true">M</span>
+          <span>Simple Emailer</span>
+        </a>
+        <p class="eyebrow">Direct from your account</p>
+        <h1>One message.<br>Nothing stored.</h1>
+        <p class="rail-copy">Choose your provider, review the envelope, and send through its secure SMTP service.</p>
+      </div>
+
+      <ol class="process" aria-label="Sending process">
+        <li><span>01</span><div><strong>Connect</strong><small>Your provider credentials</small></div></li>
+        <li><span>02</span><div><strong>Compose</strong><small>Recipients and files</small></div></li>
+        <li><span>03</span><div><strong>Confirm</strong><small>Review before sending</small></div></li>
+      </ol>
+
+      <div class="privacy-note">
+        <span class="privacy-dot" aria-hidden="true"></span>
+        <div>
+          <strong>Local-first session</strong>
+          <p>Passwords are never written to disk or browser storage.</p>
+        </div>
+      </div>
+    </aside>
+
+    <main class="workspace" id="compose">
+      <header class="workspace-header">
+        <div>
+          <p class="section-kicker">New delivery</p>
+          <h2>Compose message</h2>
+        </div>
+        <div class="connection-state" id="connection-state">
+          <span aria-hidden="true"></span>
+          <span>Ready</span>
+        </div>
+      </header>
+
+      <form id="email-form" method="post" action="/api/send" autocomplete="off">
+        <section class="form-section" aria-labelledby="provider-heading">
+          <div class="section-heading">
+            <span class="section-number">01</span>
+            <div>
+              <h3 id="provider-heading">Mail provider</h3>
+              <p>Connections use the provider's official encrypted SMTP endpoint.</p>
+            </div>
+          </div>
+          <div class="provider-grid" id="provider-options" role="radiogroup" aria-label="Mail provider"></div>
+          <div class="provider-guidance" id="provider-guidance" aria-live="polite"></div>
+        </section>
+
+        <section class="form-section" aria-labelledby="account-heading">
+          <div class="section-heading">
+            <span class="section-number">02</span>
+            <div>
+              <h3 id="account-heading">Account</h3>
+              <p>The app password is used once for this connection.</p>
+            </div>
+          </div>
+          <div class="field-grid two-columns">
+            <label class="field">
+              <span>Sender name <small>Optional</small></span>
+              <input id="sender-name" type="text" maxlength="100" placeholder="Alex Morgan">
+            </label>
+            <label class="field">
+              <span>Email address</span>
+              <input id="sender-email" type="email" maxlength="254" inputmode="email" autocomplete="username" placeholder="you@example.com" required>
+            </label>
+          </div>
+          <div class="field password-field">
+            <label for="app-password">App password</label>
+            <span class="password-control">
+              <input id="app-password" type="password" maxlength="1024" autocomplete="off" spellcheck="false" placeholder="Provider-generated password" required>
+              <button id="toggle-password" type="button" aria-label="Show app password" aria-pressed="false">Show</button>
+            </span>
+          </div>
+        </section>
+
+        <section class="form-section" aria-labelledby="delivery-heading">
+          <div class="section-heading">
+            <span class="section-number">03</span>
+            <div>
+              <h3 id="delivery-heading">Delivery</h3>
+              <p>Separate multiple addresses with a comma, semicolon, or new line.</p>
+            </div>
+          </div>
+          <label class="field">
+            <span>To</span>
+            <textarea id="to" rows="2" placeholder="recipient@example.com" required></textarea>
+          </label>
+          <div class="field-grid two-columns">
+            <label class="field">
+              <span>Cc <small>Optional</small></span>
+              <input id="cc" type="text" inputmode="email" placeholder="copy@example.com">
+            </label>
+            <label class="field">
+              <span>Bcc <small>Optional, hidden</small></span>
+              <input id="bcc" type="text" inputmode="email" placeholder="private@example.com">
+            </label>
+          </div>
+          <label class="field">
+            <span>Reply-to <small>Optional</small></span>
+            <input id="reply-to" type="email" maxlength="254" inputmode="email" placeholder="replies@example.com">
+          </label>
+        </section>
+
+        <section class="form-section" aria-labelledby="message-heading">
+          <div class="section-heading">
+            <span class="section-number">04</span>
+            <div>
+              <h3 id="message-heading">Message</h3>
+              <p>Plain text is readable and dependable across mail clients.</p>
+            </div>
+          </div>
+          <label class="field">
+            <span>Subject <small id="subject-count">0 / 200</small></span>
+            <input id="subject" type="text" maxlength="200" placeholder="What is this about?" required>
+          </label>
+          <label class="field">
+            <span>Message <small id="body-count">0 / 100,000</small></span>
+            <textarea id="body" rows="10" maxlength="100000" placeholder="Write your message..." required></textarea>
+          </label>
+
+          <div class="attachment-zone">
+            <div>
+              <strong>Attachments</strong>
+              <p>Up to 5 files, 8 MB each, 12 MB total.</p>
+            </div>
+            <button class="file-button" type="button" id="add-files">Add files</button>
+            <input id="attachments" type="file" multiple hidden>
+          </div>
+          <ul class="attachment-list" id="attachment-list" aria-live="polite"></ul>
+        </section>
+
+        <div class="send-bar">
+          <p><strong>No drafts.</strong> Your entries remain only in this open page.</p>
+          <button class="primary-button" type="button" id="review-button">
+            <span>Review message</span>
+            <span aria-hidden="true">-&gt;</span>
+          </button>
+        </div>
+      </form>
+    </main>
+  </div>
+
+  <dialog id="confirm-dialog" aria-labelledby="confirm-title">
+    <form method="dialog" class="dialog-card">
+      <div class="dialog-topline"><span>Final check</span><button value="cancel" aria-label="Close review">Close</button></div>
+      <h2 id="confirm-title">Ready to send?</h2>
+      <p>The provider accepting a message does not guarantee final delivery.</p>
+      <dl class="review-list">
+        <div><dt>Provider</dt><dd id="review-provider"></dd></div>
+        <div><dt>From</dt><dd id="review-from"></dd></div>
+        <div><dt>To</dt><dd id="review-to"></dd></div>
+        <div><dt>Cc</dt><dd id="review-cc"></dd></div>
+        <div><dt>Bcc</dt><dd id="review-bcc"></dd></div>
+        <div><dt>Subject</dt><dd id="review-subject"></dd></div>
+        <div><dt>Message</dt><dd id="review-body" class="review-body"></dd></div>
+        <div><dt>Files</dt><dd id="review-files"></dd></div>
+      </dl>
+      <div class="dialog-actions">
+        <button class="secondary-button" value="cancel">Keep editing</button>
+        <button class="primary-button" type="button" id="confirm-send">Confirm and send</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="status-message" role="status" aria-live="polite" hidden></div>
+  <script src="/app.js" defer></script>
+</body>
+</html>
